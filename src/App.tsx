@@ -17,8 +17,22 @@ const darkTheme = createTheme({
   },
 })
 
-const RadioTitle = (props: PropsWithChildren) => {
-  return <h1 className="text-2xl font-medium">{props.children}</h1>
+function getWindowDimensions() {
+  const { innerWidth: width, innerHeight: height } = window
+  return {
+    width,
+    height,
+  }
+}
+
+const RadioTitle = (
+  props: PropsWithChildren<{
+    windowDimensions: { width: number; height: number }
+  }>
+) => {
+  if (props.windowDimensions.width > 720)
+    return <h1 className="text-2xl font-medium">{props.children}</h1>
+  else return <h1 className="text-xl font-medium">{props.children}</h1>
 }
 
 function App() {
@@ -29,6 +43,19 @@ function App() {
     deleteRadioStation,
     editRadioStationName,
   } = useFavorites()
+
+  const [windowDimensions, setWindowDimensions] = useState(
+    getWindowDimensions()
+  )
+
+  useEffect(() => {
+    function handleResize() {
+      setWindowDimensions(getWindowDimensions())
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const [audio, setAudio] = useState<HTMLAudioElement | undefined>(undefined)
   const [playing, setPlaying] = useState(false)
@@ -66,7 +93,7 @@ function App() {
 
   return (
     <ThemeProvider theme={darkTheme}>
-      <Box sx={{ width: '100vw', height: '100vh', bgcolor: 'grey.800' }}>
+      <div className="w-full h-full min-h-screen bg-neutral-500 overflow-auto">
         <Modal
           open={editingRadio !== undefined}
           onClose={() => setEditingRadio(undefined)}
@@ -117,7 +144,7 @@ function App() {
             </div>
           </Box>
         </Modal>
-        <div className="flex flex-col items-center pt-5">
+        <div className="flex flex-col items-center mt-10 mb-10">
           <h1 className="text-white text-3xl font-medium">Radio Browser</h1>
           <div className="flex flex-row itmes-center justify-between w-10/12 mt-5 mb-2">
             <h2 className="text-white">FAVORITE RADIOS</h2>
@@ -144,12 +171,42 @@ function App() {
               sx={{
                 borderBottom: 2,
                 borderColor: 'grey.400',
-                padding: 1.5,
+                padding: 2,
               }}
             >
-              <RadioTitle>
-                {selectedRadio === undefined ? 'Teste' : selectedRadio.name}
-              </RadioTitle>
+              <div className="flex flex-row items-center gap-3">
+                {selectedRadio !== undefined &&
+                  (playing ? (
+                    <div onClick={() => setPlaying(false)}>
+                      <StopIcon
+                        sx={{
+                          fontSize: '38pt',
+                          ':hover': {
+                            color: 'grey.600',
+                            cursor: 'pointer',
+                          },
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div onClick={() => setPlaying(true)}>
+                      <PlayArrowIcon
+                        sx={{
+                          fontSize: '38pt',
+                          ':hover': {
+                            color: 'grey.600',
+                            cursor: 'pointer',
+                          },
+                        }}
+                      />
+                    </div>
+                  ))}
+                <RadioTitle windowDimensions={windowDimensions}>
+                  {selectedRadio === undefined
+                    ? 'PICK A RADIO STATION'
+                    : selectedRadio.name}
+                </RadioTitle>
+              </div>
             </Box>
             {favorites &&
               Object.keys(favorites).map((key) => (
@@ -167,7 +224,8 @@ function App() {
                         <div
                           onClick={() => {
                             if (selectedRadio?.id === favorites[key]?.id) {
-                              setPlaying(false)
+                              if (playing) setPlaying(false)
+                              else setPlaying(true)
                             } else {
                               selectRaioStation(favorites[key]!)
                             }
@@ -185,7 +243,8 @@ function App() {
                               },
                             }}
                           >
-                            {selectedRadio?.id === favorites[key]?.id ? (
+                            {selectedRadio?.id === favorites[key]?.id &&
+                            playing ? (
                               <StopIcon sx={{ fontSize: '38pt' }} />
                             ) : (
                               <PlayArrowIcon sx={{ fontSize: '38pt' }} />
@@ -193,8 +252,12 @@ function App() {
                           </Box>
                         </div>
                         <div className="flex flex-col w-full">
-                          <RadioTitle>{favorites[key]?.name}</RadioTitle>
-                          <p className="text-sm">{`${favorites[key]?.country}${favorites[key]?.state ? ', ' + favorites[key].state : ''}${favorites[key]?.tags ? ', ' + favorites[key].tags : ''}`}</p>
+                          <RadioTitle windowDimensions={windowDimensions}>
+                            {favorites[key]?.name}
+                          </RadioTitle>
+                          {windowDimensions.width > 720 && (
+                            <p className="text-sm">{`${favorites[key]?.country}${favorites[key]?.state ? ', ' + favorites[key].state : ''}${favorites[key]?.tags ? ', ' + favorites[key].tags : ''}`}</p>
+                          )}
                         </div>
                         <div className="flex flex-row-reverse gap-2">
                           <div
@@ -230,14 +293,13 @@ function App() {
                 </>
               ))}
           </Box>
-          {/* <InfiniteScrollingList /> */}
           <TemporaryDrawer
             findRadioStation={findRadioStation}
             addRadioStation={addRadioStation}
             deleteRadioStation={deleteRadioStation}
           />
         </div>
-      </Box>
+      </div>
     </ThemeProvider>
   )
 }

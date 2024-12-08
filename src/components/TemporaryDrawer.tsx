@@ -12,6 +12,7 @@ import InfiniteScroll from 'react-infinite-scroll-component'
 import { RadioStation } from 'entities'
 import { getRadioStations } from 'api'
 import DoneIcon from '@mui/icons-material/Done'
+import MenuIcon from '@mui/icons-material/Menu'
 
 const RadioStationbButton = ({
   radioStation,
@@ -83,10 +84,9 @@ export const TemporaryDrawer = ({
   const [hasMore, setHasMore] = useState(true)
 
   const getRadios = async () => {
-    console.log('Get radios!')
     const newRadioStations = await getRadioStations({
       name: searchName,
-      limit: 20,
+      limit: 10,
       offset: radioStations.length,
     })
     if (newRadioStations.length === 0) {
@@ -99,8 +99,7 @@ export const TemporaryDrawer = ({
   useEffect(() => {
     setRadioStations([])
     setHasMore(true)
-    console.log('First fetch')
-    getRadioStations({ name: searchName, limit: 20, offset: 0 }).then(
+    getRadioStations({ name: searchName, limit: 10, offset: 0 }).then(
       (newRadioStations) => {
         setRadioStations(newRadioStations)
       }
@@ -112,57 +111,68 @@ export const TemporaryDrawer = ({
   }, [open])
 
   const DrawerList = (
-    <Box
-      sx={{ width: 350, bgcolor: 'grey.900' }}
-      role="presentation"
-      className="overflow-hidden"
+    <div
+      id="scrollableDiv"
+      className="w-80 h-full bg-neutral-900 overflow-auto no-scrollbar"
     >
-      <div id="scrollableDiv" className="h-full overflow-auto flex-1">
-        <div className=" flex flex-col items-center justify-center w-full">
-          <TextField
-            id="filled-basic"
-            label="Search here"
-            variant="filled"
-            margin="normal"
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              setSearchName(event.target.value)
+      <div className="flex flex-row-reverse items-center mt-4 mr-4">
+        <div onClick={() => setOpen(false)}>
+          <MenuIcon
+            color="primary"
+            sx={{
+              fontSize: '30pt',
+              ':hover': {
+                color: 'primary.dark',
+                cursor: 'pointer',
+              },
             }}
           />
         </div>
-        <InfiniteScroll
-          dataLength={radioStations.length}
-          next={() => {
-            getRadios()
-          }}
-          scrollableTarget="scrollableDiv"
-          hasMore={hasMore}
-          loader={
-            <Box
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              py={2}
-            >
-              <CircularProgress />
-            </Box>
-          }
-          style={{ overflow: 'hidden' }}
-        >
-          <List>
-            {radioStations.map((item) => (
-              <ListItem key={item.id}>
-                <RadioStationbButton
-                  radioStation={item}
-                  findRadioStation={findRadioStation}
-                  addRadioStation={addRadioStation}
-                  deleteRadioStation={deleteRadioStation}
-                />
-              </ListItem>
-            ))}
-          </List>
-        </InfiniteScroll>
       </div>
-    </Box>
+      <div className="flex flex-col items-center justify-center w-full my-5">
+        <TextField
+          id="filled-basic"
+          label="Search here"
+          variant="filled"
+          margin="normal"
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+            setSearchName(event.target.value)
+          }}
+        />
+      </div>
+      <InfiniteScroll
+        dataLength={radioStations.length}
+        next={() => {
+          getRadios()
+        }}
+        scrollableTarget="scrollableDiv"
+        hasMore={hasMore}
+        loader={
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            py={2}
+          >
+            <CircularProgress />
+          </Box>
+        }
+        style={{ overflow: 'hidden' }}
+      >
+        <List>
+          {radioStations.map((item) => (
+            <ListItem key={item.id}>
+              <RadioStationbButton
+                radioStation={item}
+                findRadioStation={findRadioStation}
+                addRadioStation={addRadioStation}
+                deleteRadioStation={deleteRadioStation}
+              />
+            </ListItem>
+          ))}
+        </List>
+      </InfiniteScroll>
+    </div>
   )
 
   return (
